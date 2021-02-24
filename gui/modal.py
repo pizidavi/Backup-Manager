@@ -19,6 +19,8 @@ class Modal:
 
     def backup(self, original_dir, backup_dir):
         self.__clear()
+        self.__log('Backup started by {} | from "{}" to "{}"'.format(os.getlogin(), original_dir.path, backup_dir.path))
+
         trash_dir = Path(os.path.join(backup_dir.path, settings['SETTINGS']['trash_dir_name']))
         stats = {
             'new': 0,
@@ -114,7 +116,7 @@ class Modal:
                     stats['deleted'],
                     stats['error'])
         self.__log(report)
-        self.__log('Complete')
+        self.__log('Backup completed')
 
         messagebox.showinfo(message='Completed')
 
