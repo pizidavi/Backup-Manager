@@ -1,5 +1,2 @@
 .idea/
 */__pycache__
-config.json
-folders.ignore
-syslog.log

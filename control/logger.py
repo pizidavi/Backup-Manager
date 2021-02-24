@@ -1,19 +1,12 @@
-import sys
 import logging
+from control.settings import LOG_FILEPATH
 
-DEBUG = logging.DEBUG
-INFO = logging.INFO
-
-StreamHandler = logging.StreamHandler(sys.stdout)
-StreamHandler.setLevel(DEBUG)
-StreamHandler.setFormatter(logging.Formatter('%(levelname)s:%(asctime)s: %(message)s'))
-
-FileHandler = logging.FileHandler('syslog.log')
-FileHandler.setLevel(INFO)
+FileHandler = logging.FileHandler(LOG_FILEPATH)
+FileHandler.setLevel(logging.DEBUG)
 FileHandler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(message)s'))
 
 
-def get_logger(name, level=None):
+def get_logger(name):
     """
     Auto-set important options in logger
     :param name: logger's name
@@ -22,7 +15,6 @@ def get_logger(name, level=None):
     """
     logger = logging.getLogger(name)
     logger.propagate = False
-    logger.setLevel((level if level is not None else logging.INFO))
-    logger.addHandler(StreamHandler)
+    logger.setLevel(logging.DEBUG)
     logger.addHandler(FileHandler)
     return logger

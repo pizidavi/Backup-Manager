@@ -1,21 +1,25 @@
 import os.path
 import shutil
-from tkinter import INSERT
+from tkinter import Text, INSERT, END
+from tkinter import messagebox
 
-from control.Config import Config
+import control.logger as logging
+from control.settings import Settings
 from obj.Path import Path
 from obj.File import File
 
-config = Config()
+logger = logging.get_logger(__name__)
+settings = Settings()
 
 
 class Modal:
 
-    def __init__(self, logger):
-        self.__logger = logger
+    def __init__(self, view: Text):
+        self.__view = view
 
     def backup(self, original_dir, backup_dir):
-        trash_dir = Path(os.path.join(backup_dir.path, config.backup_trash_dir.name))
+        self.__clear()
+        trash_dir = Path(os.path.join(backup_dir.path, settings['SETTINGS']['trash_dir_name']))
         stats = {
             'new': 0,
             'changed': 0,
@@ -26,12 +30,11 @@ class Modal:
 
         if not os.path.exists(trash_dir.path) or not os.path.isdir(trash_dir.path):
             os.mkdir(trash_dir.path)
-            self.__logger.insert(INSERT, 'Trash directory created' + '\n')
+            self.__log('Trash directory created')
 
         for current_dir_path, dirs, files in os.walk(original_dir.path):
-            dirs[:] = [d for d in dirs if d not in config.folders_ignore]
-            self.__logger.insert(INSERT, 'Checking "{}" folder: {} files'.format(current_dir_path, len(files)) + '\n')
-            self.__logger.insert(INSERT, current_dir_path + '\n')
+            dirs[:] = [d for d in dirs if d not in settings.folders_ignore]
+            self.__log('Checking "{}" folder: {} files'.format(current_dir_path, len(files)))
 
             generic_dir_path = current_dir_path.replace(original_dir.path, '', 1)
             for file in files:
@@ -44,10 +47,10 @@ class Modal:
 
                 elif backup.exists and original.last_edit_date != backup.last_edit_date:  # Changed
                     if original.last_edit_date > backup.last_edit_date:
-                        self.__logger.insert(INSERT, '{}  updated'.format(file) + '\n')
+                        self.__log('{}  updated'.format(file))
                         stats['changed'] += 1
 
-                        if config.soft_delete:
+                        if settings['SETTINGS']['soft-delete']:
                             if not os.path.exists(trash.path):
                                 os.makedirs(trash.path)
                             elif trash.exists:
@@ -59,11 +62,11 @@ class Modal:
                         shutil.copy2(original.filepath, backup.path)
 
                     elif original.last_edit_date < backup.last_edit_date:
-                        self.__logger.insert(INSERT, '{}  Original older than Backup!'.format(file) + '\n')
+                        self.__log('{}  Original older than Backup!'.format(file), 40)
                         stats['error'] += 1
 
                 elif not backup.exists:  # New
-                    self.__logger.insert(INSERT, '{} saved'.format(file) + '\n')
+                    self.__log('{} saved'.format(file))
                     stats['new'] += 1
 
                     if not os.path.exists(backup.path):
@@ -71,14 +74,14 @@ class Modal:
                     shutil.copy2(original.filepath, backup.path)
 
                 else:
-                    self.__logger.insert(INSERT, 'Option not operated: {}'.format(file) + '\n')
+                    self.__log('Option not operated: {}'.format(file), 30)
                     stats['error'] += 1
 
-        self.__logger.insert(INSERT, 'Checking for deleted file...' + '\n')
+        self.__log('Checking for deleted file...')
 
         for current_dir_path, dirs, files in os.walk(backup_dir.path):
-            dirs[:] = [d for d in dirs if d not in config.folders_ignore]
-            # logger.debug('Checking "%s" folder (%s files)', current_dir_path, len(files))
+            dirs[:] = [d for d in dirs if d not in settings.folders_ignore]
+            self.__log('Checking "{}" folder ({} files)'.format(current_dir_path, len(files)), 10)
 
             generic_dir_path = current_dir_path.replace(backup_dir.path, '', 1)
             for file in files:
@@ -87,11 +90,11 @@ class Modal:
                 trash = File(file, trash_dir.path + generic_dir_path)
 
                 if not original.exists:  # Original file deleted
-                    self.__logger.insert(INSERT, '{} {}'.format(file, (
-                        'moved to Trash folder' if config.soft_delete else 'deleted')) + '\n')
+                    self.__log('{} {}'.format(file, ('moved to Trash folder'
+                                                        if settings['SETTINGS']['soft-delete'] else 'deleted')))
                     stats['deleted'] += 1
 
-                    if config.soft_delete:
+                    if settings['SETTINGS']['soft-delete']:
                         if not os.path.exists(trash.path):
                             os.makedirs(trash.path)
                         elif trash.exists:
@@ -101,7 +104,7 @@ class Modal:
                         os.remove(backup.filepath)
 
                     if len(os.listdir(backup.path)) == 0:  # remove empty folder
-                        self.__logger.insert(INSERT, 'Empty folder "{}" removed'.format(backup.path) + '\n')
+                        self.__log('Empty folder "{}" removed'.format(backup.path))
                         os.rmdir(backup.path)
 
         report = "Report | New: {}, Changed: {}, Exists: {}, Deleted: {}, Error: {}".format(
@@ -110,5 +113,15 @@ class Modal:
                     stats['exists'],
                     stats['deleted'],
                     stats['error'])
-        self.__logger.insert(INSERT, report + '\n')
-        self.__logger.insert(INSERT, 'Complete' + '\n')
+        self.__log(report)
+        self.__log('Complete')
+
+        messagebox.showinfo(message='Completed')
+
+    def __log(self, text, level=20):
+        if level >= 10:
+            self.__view.insert(INSERT, text + '\n')
+        logger.log(level, text)
+
+    def __clear(self):
+        self.__view.delete(1.0, END)

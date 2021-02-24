@@ -1,5 +1,0 @@
-{
-  "backup_trash_dir_name": ".trash",
-  "soft-delete": true,
-  "debug": false
-}
