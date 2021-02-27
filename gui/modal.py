@@ -1,10 +1,11 @@
 import os.path
 import shutil
+from datetime import datetime
 from tkinter import Text, INSERT, END
 from tkinter import messagebox
 
 import control.logger as logging
-from control.settings import Settings
+from control.settings import Settings, BACKUP_FILENAME
 from obj.Path import Path
 from obj.File import File
 
@@ -17,9 +18,9 @@ class Modal:
     def __init__(self, view: Text):
         self.__view = view
 
-    def backup(self, original_dir, backup_dir):
+    def backup(self, original_dir: Path, backup_dir: Path):
         self.__clear()
-        self.__log('Backup started by {} | from "{}" to "{}"'.format(os.getlogin(), original_dir.path, backup_dir.path))
+        self.__log('Backup by {} | from "{}" to "{}"'.format(os.getlogin(), original_dir.path, backup_dir.path))
 
         trash_dir = Path(os.path.join(backup_dir.path, settings['SETTINGS']['trash_dir_name']))
         stats = {
@@ -36,7 +37,7 @@ class Modal:
 
         for current_dir_path, dirs, files in os.walk(original_dir.path):
             dirs[:] = [d for d in dirs if d not in settings.folders_ignore]
-            self.__log('Checking "{}" folder: {} files'.format(current_dir_path, len(files)))
+            self.__log('Checking "{}" folder ({} files)'.format(current_dir_path, len(files)))
 
             generic_dir_path = current_dir_path.replace(original_dir.path, '', 1)
             for file in files:
@@ -87,13 +88,15 @@ class Modal:
 
             generic_dir_path = current_dir_path.replace(backup_dir.path, '', 1)
             for file in files:
+                if file == BACKUP_FILENAME:
+                    continue
                 original = File(file, original_dir.path + generic_dir_path)
                 backup = File(file, backup_dir.path + generic_dir_path)
                 trash = File(file, trash_dir.path + generic_dir_path)
 
                 if not original.exists:  # Original file deleted
                     self.__log('{} {}'.format(file, ('moved to Trash folder'
-                                                        if settings['SETTINGS']['soft-delete'] else 'deleted')))
+                                                     if settings['SETTINGS']['soft-delete'] else 'deleted')))
                     stats['deleted'] += 1
 
                     if settings['SETTINGS']['soft-delete']:
@@ -116,12 +119,13 @@ class Modal:
                     stats['deleted'],
                     stats['error'])
         self.__log(report)
-        self.__log('Backup completed')
+        open(backup_dir.path+BACKUP_FILENAME, 'a+').write(datetime.now().strftime('%Y-%m-%d %H:%M:%S ') + report+'\n')
 
-        messagebox.showinfo(message='Completed')
+        self.__log('Backup completed')
+        messagebox.showinfo('Info', 'Backup completed')
 
     def __log(self, text, level=20):
-        if level >= 10:
+        if level >= 20:
             self.__view.insert(INSERT, text + '\n')
         logger.log(level, text)
 

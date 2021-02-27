@@ -1,12 +1,12 @@
 import os.path
+from threading import Thread
 from tkinter import Tk, StringVar
-from tkinter import filedialog
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
 
 import control.logger as logging
 from control.settings import Settings
 from gui.modal import Modal
-from gui.view import GUI
+from gui.view import View
 from obj.Path import Path
 
 logger = logging.get_logger(__name__)
@@ -17,7 +17,7 @@ class App:
 
     def __init__(self):
         self.__root = Tk()
-        self.__view = GUI(self.__root)
+        self.__view = View(self.__root)
         self.__modal = Modal(self.__view.TLog)
 
         # Set default
@@ -54,4 +54,4 @@ class App:
         settings.set('DEFAULT_PATH', 'original', origin_dir.path)
         settings.set('DEFAULT_PATH', 'backup', backup_dir.path)
 
-        self.__modal.backup(origin_dir, backup_dir)
+        Thread(target=self.__modal.backup, args=(origin_dir, backup_dir)).start()

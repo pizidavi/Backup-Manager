@@ -5,6 +5,7 @@ FOLDER = '.BackupManager'
 FILENAME = 'settings.ini'
 FOLDERS_IGNORE_FILENAME = 'folders.ignore'
 LOG_FILENAME = 'syslog.log'
+BACKUP_FILENAME = 'backup.log'
 
 PATH = os.path.join(os.path.expanduser('~'), FOLDER)
 FILEPATH = os.path.join(PATH, FILENAME)

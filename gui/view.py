@@ -1,7 +1,7 @@
 from tkinter import *
 
 
-class GUI:
+class View:
 
     def __init__(self, root: Tk):
         self.__root = root
@@ -36,7 +36,7 @@ class GUI:
 
         self.TLog = Text(frame, wrap=NONE, xscrollcommand=xscrollbar.set, yscrollcommand=yscrollbar.set)
         self.TLog.edit_modified(0)
-        self.TLog.bind('<Key>', lambda x: 'break')
+        self.TLog.bind('<Key>', lambda x: None if x.state == 12 and (x.keycode == 67 or x.keycode == 65) else 'break')
         self.TLog.bind('<<Modified>>', lambda x: self.__to_end(self.TLog))
         self.TLog.pack(fill=BOTH)
         xscrollbar.config(command=self.TLog.xview)
@@ -47,6 +47,6 @@ class GUI:
         self.BStart.place(relx=0.32, rely=0.875, height=34, width=167)
 
     @staticmethod
-    def __to_end(element):
+    def __to_end(element: Text):
         element.see(END)
         element.edit_modified(0)
