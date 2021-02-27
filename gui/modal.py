@@ -80,7 +80,7 @@ class Modal:
                     self.__log('Option not operated: {}'.format(file), 30)
                     stats['error'] += 1
 
-        self.__log('Checking for deleted file...')
+        self.__log('Searching for deleted file...')
 
         for current_dir_path, dirs, files in os.walk(backup_dir.path):
             dirs[:] = [d for d in dirs if d not in settings.folders_ignore]
